@@ -1,7 +1,7 @@
-require('babel-polyfill');
 module.exports.parser = 'flow';
 const fs = require('fs');
 const OPTIONS_FILE = './args1.json';
+
 export default function transform(file, api, options){
     const j = api.jscodeshift;
     const args = JSON.parse(fs.readFileSync(options.file || OPTIONS_FILE, 'utf8'));
