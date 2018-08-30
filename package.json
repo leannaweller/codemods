@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel-plugin-transform-decorators-legacy": "^1.3.5",
     "jscodeshift": "^0.5.1",
     "jscodeshift-imports": "^1.1.0"
   }

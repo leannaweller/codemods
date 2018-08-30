@@ -1,3 +1,4 @@
+require('babel-plugin-transform-decorators-legacy');
 module.exports.parser = 'flow';
 const fs = require('fs');
 const OPTIONS_FILE = './args1.json';
@@ -17,7 +18,7 @@ export default function transform(file, api, options){
       p.value.openingElement.name.name = args.component.name;
       p.value.closingElement.name.name = args.component.name;
       const {attributes} = p.value.openingElement;
-      p.value.openingElement.attributes = [];
+      p.value.openingElement.attributes = filterAttributesByName(attributes, 'className');
       findClassNameAttr(attributes)
         .value.value.split(' ')
         .filter(prop => prop !== args.className)
@@ -44,4 +45,5 @@ const findClassNameAttr = (attributes) => {
   return attributes.find(a => a.name.name === 'className');
 };
 
+const filterAttributesByName = (attributes, name) => attributes.filter(a => a.name.name !== name)
 
