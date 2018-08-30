@@ -1,0 +1,13 @@
+{
+ "className": "x-text",
+ "component": {
+   "path": "../../ui/Element",
+   "name": "Element"
+ },
+ "props": {
+   "x-text_color_red": {
+      "name": "color",
+      "value": "red"
+   }	 
+ }
+}
