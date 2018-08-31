@@ -11,7 +11,9 @@ export default function transform(file, api, options){
     .filter(
       p => {
         const classNameAttr = findClassNameAttr(p.value.openingElement.attributes);
-        return classNameAttr && classNameAttr.value.value.indexOf(args.className) !== -1;
+        return classNameAttr
+	              && classNameAttr.value.value
+		      && classNameAttr.value.value.indexOf(args.className) !== -1;
       }
     )
     .forEach(p => {
@@ -28,8 +30,10 @@ export default function transform(file, api, options){
     });
     root.find(j.Program)
       .replaceWith(({ node }) => {
-         const importsCount = node.body.filter(n => n.type === 'ImportDeclaration').length;
-         node.body.splice(importsCount, 0, createImport(j, args.component));      
+	 const imports = getImports(node);
+	 if (!imports.find(i => i.source.value === args.component.path)) {
+           node.body.splice(importsCount, imports.length, createImport(j, args.component));      
+	 }
          return node;
     });
     return root.toSource();
@@ -47,3 +51,4 @@ const findClassNameAttr = (attributes) => {
 
 const filterAttributesByName = (attributes, name) => attributes.filter(a => a.name.name !== name)
 
+const getImports = (node) => node.body.filter(n => n.type === 'ImportDeclaration') 
