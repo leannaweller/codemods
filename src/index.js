@@ -4,10 +4,11 @@ const fs = require('fs');
 const OPTIONS_FILE = './args1.json';
 
 export default function transform(file, api, options){
+    const extension = file.path.split('.').pop(); 
     const j = api.jscodeshift;
     const args = JSON.parse(fs.readFileSync(options.file || OPTIONS_FILE, 'utf8'));
     const root = j(file.source);
-     root.find(j.JSXElement)
+    const nodes =  root.find(j.JSXElement)
     .filter(
       p => {
         const classNameAttr = findClassNameAttr(p.value.openingElement.attributes);
@@ -15,7 +16,12 @@ export default function transform(file, api, options){
 	              && classNameAttr.value.value
 		      && classNameAttr.value.value.indexOf(args.className) !== -1;
       }
-    )
+    );
+    if (!nodes.length) {
+     console.log(`File ${file.path} will be not modified`);
+     return;
+    };
+    nodes	
     .forEach(p => {
       p.value.openingElement.name.name = args.component.name;
       p.value.closingElement.name.name = args.component.name;
@@ -32,11 +38,11 @@ export default function transform(file, api, options){
       .replaceWith(({ node }) => {
 	 const imports = getImports(node);
 	 if (!imports.find(i => i.source.value === args.component.path)) {
-           node.body.splice(importsCount, imports.length, createImport(j, args.component));      
+           node.body.splice(imports.length, 0, createImport(j, args.component));      
 	 }
          return node;
     });
-    return root.toSource();
+    return root.toSource().replace(new RegExp('"', 'g'), "'");
 };
 
 const createImport = (j, {path, name}) => (
@@ -46,7 +52,7 @@ const createImport = (j, {path, name}) => (
 const createProp = (j, {name, value}) => j.jsxAttribute(j.jsxIdentifier(name), j.literal(value));
 
 const findClassNameAttr = (attributes) => {
-  return attributes.find(a => a.name.name === 'className');
+  return attributes.find(a => a && a.name && a.name.name === 'className');
 };
 
 const filterAttributesByName = (attributes, name) => attributes.filter(a => a.name.name !== name)
