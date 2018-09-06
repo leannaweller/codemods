@@ -2,59 +2,42 @@ require('babel-plugin-transform-decorators-legacy');
 module.exports.parser = 'flow';
 const fs = require('fs');
 const OPTIONS_FILE = './args1.json';
+import {
+	createImport, 
+	createAttr, 
+	findAttr, 
+	filterAttrsByName,
+	getDoubleProperty,
+	setDoubleProperty,
+	getImports,
+	addImport,
+	findElementsByAttrValue
+} from './utils';
 
 export default function transform(file, api, options){
-    const extension = file.path.split('.').pop(); 
     const j = api.jscodeshift;
     const args = JSON.parse(fs.readFileSync(options.file || OPTIONS_FILE, 'utf8'));
     const root = j(file.source);
-    const nodes =  root.find(j.JSXElement)
-    .filter(
-      p => {
-        const classNameAttr = findClassNameAttr(p.value.openingElement.attributes);
-        return classNameAttr
-	              && classNameAttr.value.value
-		      && classNameAttr.value.value.indexOf(args.className) !== -1;
-      }
-    );
-    if (!nodes.length) {
-     console.log(`File ${file.path} will be not modified`);
-     return;
-    };
-    nodes	
-    .forEach(p => {
-      p.value.openingElement.name.name = args.component.name;
-      p.value.closingElement.name.name = args.component.name;
+    const nodes = findElementsByAttrValue(root.find(j.JSXElement), 'className', args.className, false);  
+    if (!nodes.length) return;
+    nodes.forEach(p => {
+      setDoubleProperty(p.value.openingElement, 'name', args.component.name);
+      setDoubleProperty(p.value.closingElement, 'name', args.component.name);
       const {attributes} = p.value.openingElement;
-      p.value.openingElement.attributes = filterAttributesByName(attributes, 'className');
-      findClassNameAttr(attributes)
-        .value.value.split(' ')
+      p.value.openingElement.attributes = filterAttrsByName(attributes, 'className');
+      getDoubleProperty(findAttr(attributes, 'className'), 'value').split(' ')
         .filter(prop => prop !== args.className)
-	.forEach(prop => args.props[prop] ? 
-                 p.value.openingElement.attributes.push(createProp(j, args.props[prop]))
+        .forEach(prop => args.props[prop] ? 
+                 p.value.openingElement.attributes.push(createAttr(j, args.props[prop]))
                  : null);
     });
     root.find(j.Program)
       .replaceWith(({ node }) => {
-	 const imports = getImports(node);
-	 if (!imports.find(i => i.source.value === args.component.path)) {
-           node.body.splice(imports.length, 0, createImport(j, args.component));      
-	 }
+         const importsCount = getImports(node).length;
+         const newImport = createImport(j, args.component);
+         addImport(node, newImport, importsCount);      
          return node;
     });
     return root.toSource().replace(new RegExp('"', 'g'), "'");
 };
 
-const createImport = (j, {path, name}) => (
-  j.importDeclaration([j.importDefaultSpecifier(j.identifier(name))], j.literal(path))
-);
-
-const createProp = (j, {name, value}) => j.jsxAttribute(j.jsxIdentifier(name), j.literal(value));
-
-const findClassNameAttr = (attributes) => {
-  return attributes.find(a => a && a.name && a.name.name === 'className');
-};
-
-const filterAttributesByName = (attributes, name) => attributes.filter(a => a.name.name !== name)
-
-const getImports = (node) => node.body.filter(n => n.type === 'ImportDeclaration') 
