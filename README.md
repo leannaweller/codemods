@@ -25,7 +25,7 @@ cp args.example.json args.json
 cp guinea-pig.example.js guinea-pig.js
 cd ..
 ```
-5. Modify `guinea-pig.js` or/and `args.json`
+5. Modify `args.json` and `transform.sh`
 6. 
 ```sh
 chmod +x ./test/transform.sh
