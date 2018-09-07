@@ -35,3 +35,6 @@ export const findElementsByAttrValue = (elements, name, value, strictCheck) =>
     )
 
 export const getTagName = (node) => getDoubleProperty(node.value.openingElement, 'name')
+
+export const compose = (...fns) => (x, ...args) => fns.reduceRight((v, f) => f(v, ...args), x);
+
